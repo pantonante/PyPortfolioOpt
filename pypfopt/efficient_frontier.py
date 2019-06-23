@@ -44,7 +44,7 @@ class EfficientFrontier(base_optimizer.BaseScipyOptimizer):
       the optimised portfolio.
     """
 
-    def __init__(self, expected_returns, cov_matrix, weight_bounds=(0, 1), gamma=0):
+    def __init__(self, expected_returns, cov_matrix, weight_bounds=(0, 1), gamma=0, asset_classes=None, asset_allocation=None):
         """
         :param expected_returns: expected returns for each asset. Set to None if
                                  optimising for volatility only.
@@ -75,7 +75,17 @@ class EfficientFrontier(base_optimizer.BaseScipyOptimizer):
         else:
             tickers = list(range(len(expected_returns)))
 
-        super().__init__(len(tickers), tickers, weight_bounds)
+        # Handle asset classes bounds
+        weight_classes = None
+        if asset_allocation is not None and asset_classes is not None:
+            if not all([tick in tickers for tick in asset_classes]):
+                raise ValueError("Asset class is not specified for every ticker")
+            weight_classes = list()
+            for asset_cat in asset_allocation:
+                cat_tickers = [k for k,v in asset_classes.items() if v == asset_cat]  
+                weight_classes.append(([tickers.index(t) for t in cat_tickers], asset_allocation[asset_cat]))
+
+        super().__init__(len(tickers), tickers, weight_bounds, weight_classes)
 
         if not isinstance(gamma, (int, float)):
             raise ValueError("gamma should be numeric")

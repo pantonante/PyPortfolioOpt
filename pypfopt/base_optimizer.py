@@ -12,7 +12,7 @@ from . import objective_functions
 
 
 class BaseOptimizer:
-    def __init__(self, n_assets, tickers=None):
+    def __init__(self, n_assets, tickers=None, asset_class_bounds=None):
         """
         :param n_assets: number of assets
         :type n_assets: int
@@ -24,6 +24,7 @@ class BaseOptimizer:
             self.tickers = list(range(n_assets))
         else:
             self.tickers = tickers
+        self.asset_class_bound = asset_class_bounds
         # Outputs
         self.weights = None
 
@@ -57,7 +58,7 @@ class BaseOptimizer:
 
 
 class BaseScipyOptimizer(BaseOptimizer):
-    def __init__(self, n_assets, tickers=None, weight_bounds=(0, 1)):
+    def __init__(self, n_assets, tickers=None, weight_bounds=(0, 1), asset_class_bounds=None):
         """
         :param weight_bounds: minimum and maximum weight of an asset, defaults to (0, 1).
                               Must be changed to (-1, 1) for portfolios with shorting.
@@ -68,6 +69,13 @@ class BaseScipyOptimizer(BaseOptimizer):
         # Optimisation parameters
         self.initial_guess = np.array([1 / self.n_assets] * self.n_assets)
         self.constraints = [{"type": "eq", "fun": lambda x: np.sum(x) - 1}]
+        if asset_class_bounds is not None:
+            for cat in asset_class_bounds: 
+                idx = cat[0]
+                val_min = cat[1][0]
+                val_max = cat[1][1] 
+                self.constraints.append({'type': 'ineq', 'fun': lambda x: np.sum(x[idx]) - val_min})
+                self.constraints.append({'type': 'ineq', 'fun': lambda x: val_max - np.sum(x[idx])})
 
     def _make_valid_bounds(self, test_bounds):
         """
