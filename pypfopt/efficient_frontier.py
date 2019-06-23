@@ -113,11 +113,12 @@ class EfficientFrontier(base_optimizer.BaseScipyOptimizer):
             objective_functions.negative_sharpe,
             x0=self.initial_guess,
             args=args,
-            method="SLSQP",
+            method="trust-constr",
             bounds=self.bounds,
             constraints=self.constraints,
         )
         self.weights = result["x"]
+        # assert(self.is_feasible(self.weights))
         return dict(zip(self.tickers, self.weights))
 
     def min_volatility(self):

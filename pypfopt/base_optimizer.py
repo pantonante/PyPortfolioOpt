@@ -9,7 +9,7 @@ evaluate return and risk for a given set of portfolio weights.
 import numpy as np
 import pandas as pd
 from . import objective_functions
-
+from scipy.optimize import LinearConstraint
 
 class BaseOptimizer:
     def __init__(self, n_assets, tickers=None, asset_class_bounds=None):
@@ -66,17 +66,18 @@ class BaseScipyOptimizer(BaseOptimizer):
         """
         super().__init__(n_assets, tickers)
         self.bounds = self._make_valid_bounds(weight_bounds)
-        # Optimisation parameters
+        # Optimization parameters
         self.initial_guess = np.array([1 / self.n_assets] * self.n_assets)
-        self.constraints = [{"type": "eq", "fun": lambda x: np.sum(x) - 1}]
+        self.constraints = [LinearConstraint(np.ones(self.n_assets), 0, 1)]
         if asset_class_bounds is not None:
             for cat in asset_class_bounds: 
                 idx = cat[0]
-                val_min = cat[1][0]
-                val_max = cat[1][1] 
-                self.constraints.append({'type': 'ineq', 'fun': lambda x: np.sum(x[idx]) - val_min})
-                self.constraints.append({'type': 'ineq', 'fun': lambda x: val_max - np.sum(x[idx])})
-
+                A = np.zeros(self.n_assets)
+                lb = cat[1][0]
+                ub = cat[1][1]
+                A[idx] = 1
+                self.constraints.append(LinearConstraint(A, lb, ub))
+              
     def _make_valid_bounds(self, test_bounds):
         """
         Private method: process input bounds into a form acceptable by scipy.optimize,
