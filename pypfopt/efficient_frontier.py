@@ -113,7 +113,7 @@ class EfficientFrontier(base_optimizer.BaseScipyOptimizer):
             objective_functions.negative_sharpe,
             x0=self.initial_guess,
             args=args,
-            method="trust-constr",
+            method="SLSQP",
             bounds=self.bounds,
             constraints=self.constraints,
         )
